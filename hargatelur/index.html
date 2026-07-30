@@ -1,1 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Global Egg Ledger — Egg Prices vs. Minimum Wage</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
+  :root{
+    --bg:        #12151c;
+    --bg-panel:  #171b24;
+    --line:      #2a2f3b;
+    --ink:       #eef0f2;
+    --ink-dim:   #8b93a3;
+    --ink-faint: #565e6e;
+    --yolk:      #f2b705;
+
+    --c-europe:  #6fb0c9;
+    --c-asia:    #e0736b;
+    --c-africa:  #7fbf7f;
+    --c-namer:   #e8a34e;
+    --c-samer:   #b48ee0;
+    --c-oceania: #56c2a3;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:44px 28px 80px; }
+
+  /* ---------- Header ---------- */
+  header{ margin-bottom:36px; border-bottom:1px solid var(--line); padding-bottom:28px; }
+  .eyebrow{
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--yolk); margin:0 0 14px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:"●"; font-size:8px; }
+  h1{
+    font-family:'Fraunces', serif; font-optical-sizing:auto;
+    font-weight:600; font-size:clamp(30px,4.2vw,46px);
+    line-height:1.05; margin:0 0 14px; letter-spacing:-0.01em;
+  }
+  h1 em{ font-style:italic; font-weight:500; color:var(--yolk); }
+  .sub{
+    color:var(--ink-dim); font-size:13.5px; line-height:1.65; max-width:640px; margin:0;
+  }
+  .sub b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- Controls ---------- */
+  .controls{
+    display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end;
+    margin:28px 0 8px; justify-content:space-between;
+  }
+  .control-group{ display:flex; flex-direction:column; gap:8px; }
+  .control-label{
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);
+  }
+  .seg{ display:flex; border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  .seg button{
+    font-family:inherit; font-size:12px; padding:9px 15px; background:var(--bg-panel);
+    color:var(--ink-dim); border:none; border-right:1px solid var(--line); cursor:pointer;
+    transition:background .15s, color .15s; white-space:nowrap;
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button:hover{ color:var(--ink); background:#1c212c; }
+  .seg button.active{ background:var(--yolk); color:#1a1503; font-weight:600; }
+
+  .dir-toggle{
+    display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+    font-size:12px; color:var(--ink-dim); border:1px solid var(--line); border-radius:3px;
+    padding:9px 14px; background:var(--bg-panel); transition:color .15s,border-color .15s;
+  }
+  .dir-toggle:hover{ color:var(--ink); border-color:#3a4152; }
+  .dir-toggle .arrow{ font-size:13px; color:var(--yolk); transition:transform .25s; display:inline-block; }
+  .dir-toggle.desc .arrow{ transform:rotate(180deg); }
+
+  /* ---------- Legend ---------- */
+  .legend{
+    display:flex; flex-wrap:wrap; gap:6px; margin:22px 0 4px;
+  }
+  .chip{
+    display:flex; align-items:center; gap:7px; font-size:11px; color:var(--ink-dim);
+    border:1px solid var(--line); border-radius:20px; padding:6px 12px 6px 8px;
+    cursor:pointer; background:var(--bg-panel); transition:all .15s;
+  }
+  .chip:hover{ border-color:#3a4152; color:var(--ink); }
+  .chip.off{ opacity:.35; }
+  .chip .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .chip .n{ color:var(--ink-faint); font-size:10px; }
+
+  /* ---------- Chart ---------- */
+  .chart-panel{
+    margin-top:26px; background:var(--bg-panel); border:1px solid var(--line);
+    border-radius:6px; padding:22px 22px 10px;
+  }
+  .metric-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-faint);
+    margin-bottom:14px; display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .metric-label .unit{ color:var(--ink-dim); text-transform:none; letter-spacing:0; font-size:11px; }
+
+  #chart{ display:block; }
+
+  .bar-track{ fill:#1f2530; }
+  .bar{ cursor:pointer; }
+  .bar-value{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; fill:var(--ink);
+    font-weight:500;
+  }
+  .country-label{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; fill:var(--ink-dim);
+  }
+  .country-label.faded{ fill: var(--ink-faint); }
+  .rank-tick{ font-size:9.5px; fill:var(--ink-faint); }
+
+  .axis-line{ stroke:var(--line); stroke-width:1; }
+  .grid line{ stroke:var(--line); stroke-dasharray:2,3; opacity:.6; }
+  .grid path{ display:none; }
+  .grid text{ fill:var(--ink-faint); font-size:10px; font-family:'IBM Plex Mono',monospace; }
+
+  /* ---------- Tooltip ---------- */
+  #tooltip{
+    position:fixed; pointer-events:none; z-index:50; background:#1c212c;
+    border:1px solid #3a4152; border-radius:6px; padding:13px 15px;
+    font-size:12px; line-height:1.6; color:var(--ink); opacity:0; transition:opacity .12s;
+    box-shadow:0 12px 30px rgba(0,0,0,.45); max-width:280px;
+  }
+  #tooltip.show{ opacity:1; }
+  #tooltip .tt-title{
+    font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin-bottom:6px;
+    display:flex; align-items:center; gap:8px;
+  }
+  #tooltip .tt-dot{ width:9px; height:9px; border-radius:50%; }
+  #tooltip .tt-row{ display:flex; justify-content:space-between; gap:18px; color:var(--ink-dim); }
+  #tooltip .tt-row b{ color:var(--ink); font-weight:600; }
+  #tooltip .tt-note{ margin-top:8px; padding-top:8px; border-top:1px solid var(--line); color:var(--ink-faint); font-size:10.5px; line-height:1.5; }
+
+  footer{
+    margin-top:30px; color:var(--ink-faint); font-size:10.5px; line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px;
+  }
+
+  @media (max-width:600px){
+    .wrap{ padding:28px 16px 60px; }
+    .controls{ flex-direction:column; align-items:stretch; }
+    .seg button{ flex:1; padding:9px 6px; font-size:11px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Field Ledger · 79 Countries · Jan 2026</p>
+    <h1>What a dozen eggs<br><em>actually costs</em> you</h1>
+    <p class="sub">Egg prices don't mean much on their own — <b>$8.12</b> in Switzerland and <b>$1.40</b> in Pakistan only make sense against what people earn. This ledger lines up egg prices, minimum monthly wages, and the resulting <b>buying power</b> (dozens of eggs a full month's minimum wage can buy) across 79 countries, colored by continent.</p>
+  </header>
+
+  <div class="controls">
+    <div class="control-group">
+      <span class="control-label">Sort &amp; display by</span>
+      <div class="seg" id="metric-seg">
+        <button data-metric="eggPrice" class="active">Egg Price</button>
+        <button data-metric="minWage">Minimum Wage</button>
+        <button data-metric="buyingPower">Buying Power</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <span class="control-label">Order</span>
+      <div class="dir-toggle desc" id="dir-toggle">
+        <span class="arrow">▾</span><span id="dir-text">Highest first</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="chart-panel">
+    <div class="metric-label">
+      <span id="metric-title">Egg price, by country</span>
+      <span class="unit" id="metric-unit">USD per dozen</span>
+    </div>
+    <svg id="chart"></svg>
+  </div>
+
+  <footer>
+    Sources — Egg prices: GlobalProductPrices.com (Jan 2026). Minimum wages: WageIndicator, WorldPopulationReview, Deel, Playroll, Employsome, CXC Global, Mauve Group, Remotepeople, hellopebl, wage.is, Eurofound, Arbeidstilsynet, Geneva LIRT, Uruguay MTSS, MoM Singapore, Bloomberg Tax (2025–2026). "CBA/Sector floor" = collective-bargaining average, used where no statutory national minimum wage exists. Buying power = eggs affordable per month at minimum wage, dozens. Hover any bar for full detail.
+  </footer>
+
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const DATA = [{"country":"Switzerland","eggPrice":8.12,"minWage":4675.0,"status":"CBA/Sector floor (est.)","buyingPower":575.7,"days":0.04,"tier":"High","continent":"Europe"},{"country":"Norway","eggPrice":7.18,"minWage":1869.0,"status":"CBA/Sector floor (est.)","buyingPower":260.3,"days":0.08,"tier":"Medium","continent":"Europe"},{"country":"Australia","eggPrice":7.18,"minWage":2691.0,"status":"Statutory","buyingPower":374.8,"days":0.06,"tier":"High","continent":"Oceania"},{"country":"New Zealand","eggPrice":7.06,"minWage":2316.0,"status":"Statutory","buyingPower":328.0,"days":0.07,"tier":"High","continent":"Oceania"},{"country":"Uruguay","eggPrice":6.25,"minWage":605.0,"status":"Statutory","buyingPower":96.8,"days":0.22,"tier":"Low","continent":"South America"},{"country":"Czechia","eggPrice":5.17,"minWage":1094.9,"status":"Statutory","buyingPower":211.8,"days":0.1,"tier":"Medium","continent":"Europe"},{"country":"Sweden","eggPrice":5.04,"minWage":2439.0,"status":"CBA/Sector floor (est.)","buyingPower":483.9,"days":0.04,"tier":"High","continent":"Europe"},{"country":"Belgium","eggPrice":5.02,"minWage":2502.6,"status":"Statutory","buyingPower":498.5,"days":0.04,"tier":"High","continent":"Europe"},{"country":"Denmark","eggPrice":4.91,"minWage":2250.0,"status":"CBA/Sector floor (est.)","buyingPower":458.2,"days":0.05,"tier":"High","continent":"Europe"},{"country":"Austria","eggPrice":4.9,"minWage":1651.0,"status":"CBA/Sector floor (est.)","buyingPower":336.9,"days":0.06,"tier":"Medium","continent":"Europe"},{"country":"UK","eggPrice":4.87,"minWage":2849.0,"status":"Statutory","buyingPower":585.0,"days":0.04,"tier":"High","continent":"Europe"},{"country":"Ireland","eggPrice":4.78,"minWage":2879.5,"status":"Statutory","buyingPower":602.4,"days":0.04,"tier":"High","continent":"Europe"},{"country":"Hong Kong","eggPrice":4.71,"minWage":530.0,"status":"Statutory","buyingPower":112.5,"days":0.19,"tier":"Low","continent":"Asia"},{"country":"Italy","eggPrice":4.65,"minWage":1470.0,"status":"CBA/Sector floor (est.)","buyingPower":316.1,"days":0.07,"tier":"Medium","continent":"Europe"},{"country":"Germany","eggPrice":4.62,"minWage":2829.4,"status":"Statutory","buyingPower":612.4,"days":0.04,"tier":"High","continent":"Europe"},{"country":"USA","eggPrice":4.62,"minWage":1256.2,"status":"Statutory","buyingPower":271.9,"days":0.08,"tier":"Medium","continent":"North America"},{"country":"Greece","eggPrice":4.57,"minWage":1216.9,"status":"Statutory","buyingPower":266.3,"days":0.08,"tier":"Medium","continent":"Europe"},{"country":"Israel","eggPrice":4.47,"minWage":1680.2,"status":"Statutory","buyingPower":375.9,"days":0.06,"tier":"Medium","continent":"Asia"},{"country":"Ghana","eggPrice":4.46,"minWage":32.0,"status":"Statutory","buyingPower":7.2,"days":3.02,"tier":"Minimal","continent":"Africa"},{"country":"France","eggPrice":4.27,"minWage":2160.1,"status":"Statutory","buyingPower":505.9,"days":0.04,"tier":"High","continent":"Europe"},{"country":"Slovakia","eggPrice":4.2,"minWage":1084.2,"status":"Statutory","buyingPower":258.1,"days":0.08,"tier":"Medium","continent":"Europe"},{"country":"Lithuania","eggPrice":4.2,"minWage":1366.2,"status":"Statutory","buyingPower":325.3,"days":0.07,"tier":"Medium","continent":"Europe"},{"country":"Latvia","eggPrice":4.06,"minWage":924.3,"status":"Statutory","buyingPower":227.7,"days":0.1,"tier":"Low","continent":"Europe"},{"country":"Romania","eggPrice":4.04,"minWage":942.0,"status":"Statutory","buyingPower":233.2,"days":0.09,"tier":"Low","continent":"Europe"},{"country":"Poland","eggPrice":3.96,"minWage":1349.6,"status":"Statutory","buyingPower":340.8,"days":0.06,"tier":"Medium","continent":"Europe"},{"country":"Chile","eggPrice":3.96,"minWage":555.5,"status":"Statutory","buyingPower":140.3,"days":0.15,"tier":"Low","continent":"South America"},{"country":"Finland","eggPrice":3.82,"minWage":1613.0,"status":"CBA/Sector floor (est.)","buyingPower":422.3,"days":0.05,"tier":"Medium","continent":"Europe"},{"country":"Spain","eggPrice":3.8,"minWage":1636.4,"status":"Statutory","buyingPower":430.6,"days":0.05,"tier":"Medium","continent":"Europe"},{"country":"Hungary","eggPrice":3.8,"minWage":993.0,"status":"Statutory","buyingPower":261.3,"days":0.08,"tier":"Low","continent":"Europe"},{"country":"Portugal","eggPrice":3.61,"minWage":1271.4,"status":"Statutory","buyingPower":352.2,"days":0.06,"tier":"Medium","continent":"Europe"},{"country":"Puerto Rico","eggPrice":3.58,"minWage":1680.0,"status":"Statutory","buyingPower":469.3,"days":0.05,"tier":"Medium","continent":"North America"},{"country":"Morocco","eggPrice":3.51,"minWage":332.5,"status":"Statutory","buyingPower":94.7,"days":0.23,"tier":"Low","continent":"Africa"},{"country":"Netherlands","eggPrice":3.45,"minWage":2249.0,"status":"Statutory","buyingPower":651.9,"days":0.03,"tier":"High","continent":"Europe"},{"country":"Croatia","eggPrice":3.44,"minWage":1244.2,"status":"Statutory","buyingPower":361.7,"days":0.06,"tier":"Medium","continent":"Europe"},{"country":"South Africa","eggPrice":3.2,"minWage":268.8,"status":"Statutory","buyingPower":84.0,"days":0.26,"tier":"Very Low","continent":"Africa"},{"country":"Mexico","eggPrice":3.16,"minWage":330.0,"status":"Statutory","buyingPower":104.4,"days":0.21,"tier":"Low","continent":"North America"},{"country":"South Korea","eggPrice":3.04,"minWage":1182.0,"status":"Statutory","buyingPower":388.8,"days":0.06,"tier":"Medium","continent":"Asia"},{"country":"Japan","eggPrice":2.96,"minWage":1244.7,"status":"Statutory","buyingPower":420.5,"days":0.05,"tier":"Medium","continent":"Asia"},{"country":"Slovenia","eggPrice":2.93,"minWage":1514.3,"status":"Statutory","buyingPower":516.8,"days":0.04,"tier":"Medium","continent":"Europe"},{"country":"Canada","eggPrice":2.89,"minWage":2191.6,"status":"Statutory","buyingPower":758.3,"days":0.03,"tier":"High","continent":"North America"},{"country":"Colombia","eggPrice":2.73,"minWage":384.4,"status":"Statutory","buyingPower":140.8,"days":0.15,"tier":"Low","continent":"South America"},{"country":"UA Emirates","eggPrice":2.72,"minWage":1634.0,"status":"Statutory","buyingPower":600.7,"days":0.04,"tier":"Medium","continent":"Asia"},{"country":"Ivory Coast","eggPrice":2.71,"minWage":124.2,"status":"Statutory","buyingPower":45.8,"days":0.47,"tier":"Very Low","continent":"Africa"},{"country":"Singapore","eggPrice":2.68,"minWage":1415.0,"status":"CBA/Sector floor (est.)","buyingPower":528.0,"days":0.04,"tier":"Medium","continent":"Asia"},{"country":"Nigeria","eggPrice":2.66,"minWage":45.5,"status":"Statutory","buyingPower":17.1,"days":1.27,"tier":"Minimal","continent":"Africa"},{"country":"Malaysia","eggPrice":2.6,"minWage":430.5,"status":"Statutory","buyingPower":165.6,"days":0.13,"tier":"Low","continent":"Asia"},{"country":"Serbia","eggPrice":2.57,"minWage":881.6,"status":"Statutory","buyingPower":343.0,"days":0.06,"tier":"Low","continent":"Europe"},{"country":"Thailand","eggPrice":2.54,"minWage":252.6,"status":"Statutory","buyingPower":99.4,"days":0.22,"tier":"Very Low","continent":"Asia"},{"country":"Jordan","eggPrice":2.54,"minWage":409.0,"status":"Statutory","buyingPower":161.0,"days":0.13,"tier":"Low","continent":"Asia"},{"country":"Peru","eggPrice":2.49,"minWage":331.8,"status":"Statutory","buyingPower":133.3,"days":0.16,"tier":"Low","continent":"South America"},{"country":"Turkey","eggPrice":2.47,"minWage":759.4,"status":"Statutory","buyingPower":307.4,"days":0.07,"tier":"Low","continent":"Asia"},{"country":"Brazil","eggPrice":2.42,"minWage":303.8,"status":"Statutory","buyingPower":125.5,"days":0.17,"tier":"Low","continent":"South America"},{"country":"Tanzania","eggPrice":2.37,"minWage":32.0,"status":"Statutory","buyingPower":13.5,"days":1.6,"tier":"Minimal","continent":"Africa"},{"country":"Saudi Arabia","eggPrice":2.34,"minWage":1067.0,"status":"Statutory","buyingPower":456.0,"days":0.05,"tier":"Medium","continent":"Asia"},{"country":"Ecuador","eggPrice":2.33,"minWage":482.0,"status":"Statutory","buyingPower":206.9,"days":0.1,"tier":"Low","continent":"South America"},{"country":"Cameroon","eggPrice":2.32,"minWage":60.1,"status":"Statutory","buyingPower":25.9,"days":0.84,"tier":"Minimal","continent":"Africa"},{"country":"China","eggPrice":2.28,"minWage":391.7,"status":"Statutory","buyingPower":171.8,"days":0.13,"tier":"Low","continent":"Asia"},{"country":"Philippines","eggPrice":2.23,"minWage":254.6,"status":"Statutory","buyingPower":114.2,"days":0.19,"tier":"Very Low","continent":"Asia"},{"country":"Russia","eggPrice":2.21,"minWage":242.5,"status":"Statutory","buyingPower":109.7,"days":0.2,"tier":"Very Low","continent":"Asia"},{"country":"Kuwait","eggPrice":2.21,"minWage":195.4,"status":"Statutory","buyingPower":88.4,"days":0.25,"tier":"Very Low","continent":"Asia"},{"country":"Ukraine","eggPrice":2.1,"minWage":202.9,"status":"Statutory","buyingPower":96.6,"days":0.22,"tier":"Very Low","continent":"Europe"},{"country":"Vietnam","eggPrice":2.1,"minWage":212.4,"status":"Statutory","buyingPower":101.1,"days":0.21,"tier":"Very Low","continent":"Asia"},{"country":"Paraguay","eggPrice":2.09,"minWage":405.9,"status":"Statutory","buyingPower":194.2,"days":0.11,"tier":"Low","continent":"South America"},{"country":"Tunisia","eggPrice":2.01,"minWage":149.0,"status":"Statutory","buyingPower":74.1,"days":0.29,"tier":"Very Low","continent":"Africa"},{"country":"Dominican Republic","eggPrice":2.01,"minWage":269.9,"status":"Statutory","buyingPower":134.3,"days":0.16,"tier":"Very Low","continent":"North America"},{"country":"Costa Rica","eggPrice":1.94,"minWage":726.0,"status":"Statutory","buyingPower":374.2,"days":0.06,"tier":"Low","continent":"North America"},{"country":"India","eggPrice":1.89,"minWage":43.2,"status":"Statutory","buyingPower":22.9,"days":0.95,"tier":"Minimal","continent":"Asia"},{"country":"Kenya","eggPrice":1.89,"minWage":116.9,"status":"Statutory","buyingPower":61.9,"days":0.35,"tier":"Very Low","continent":"Africa"},{"country":"Guatemala","eggPrice":1.89,"minWage":513.1,"status":"Statutory","buyingPower":271.5,"days":0.08,"tier":"Low","continent":"North America"},{"country":"Uganda","eggPrice":1.83,"minWage":35.1,"status":"Statutory","buyingPower":19.2,"days":1.13,"tier":"Minimal","continent":"Africa"},{"country":"Bolivia","eggPrice":1.81,"minWage":469.0,"status":"Statutory","buyingPower":259.1,"days":0.08,"tier":"Low","continent":"South America"},{"country":"Kazakhstan","eggPrice":1.8,"minWage":161.5,"status":"Statutory","buyingPower":89.7,"days":0.24,"tier":"Very Low","continent":"Asia"},{"country":"Azerbaijan","eggPrice":1.8,"minWage":235.3,"status":"Statutory","buyingPower":130.7,"days":0.17,"tier":"Very Low","continent":"Asia"},{"country":"Indonesia","eggPrice":1.79,"minWage":343.8,"status":"Statutory","buyingPower":192.1,"days":0.11,"tier":"Low","continent":"Asia"},{"country":"Zambia","eggPrice":1.77,"minWage":52.8,"status":"Statutory","buyingPower":29.8,"days":0.73,"tier":"Minimal","continent":"Africa"},{"country":"Sri Lanka","eggPrice":1.69,"minWage":56.5,"status":"Statutory","buyingPower":33.4,"days":0.65,"tier":"Minimal","continent":"Asia"},{"country":"Egypt","eggPrice":1.57,"minWage":146.7,"status":"Statutory","buyingPower":93.4,"days":0.23,"tier":"Very Low","continent":"Africa"},{"country":"Bangladesh","eggPrice":1.55,"minWage":101.5,"status":"Statutory","buyingPower":65.5,"days":0.33,"tier":"Very Low","continent":"Asia"},{"country":"Pakistan","eggPrice":1.4,"minWage":129.9,"status":"Statutory","buyingPower":92.8,"days":0.23,"tier":"Very Low","continent":"Asia"}];
+
+const CONTINENT_COLOR = {
+  "Europe":        "#6fb0c9",
+  "Asia":          "#e0736b",
+  "Africa":        "#7fbf7f",
+  "North America": "#e8a34e",
+  "South America": "#b48ee0",
+  "Oceania":       "#56c2a3"
+};
+const CONTINENT_ORDER = ["Europe","Asia","Africa","North America","South America","Oceania"];
+
+const METRICS = {
+  eggPrice:    { title:"Egg price, by country",       unit:"USD per dozen",         fmt:d3.format("$.2f"), accessor:d=>d.eggPrice },
+  minWage:     { title:"Minimum monthly wage, by country", unit:"USD per month",     fmt:d3.format("$,.0f"), accessor:d=>d.minWage },
+  buyingPower: { title:"Egg buying power, by country", unit:"dozens affordable / month at min. wage", fmt:d3.format(",.0f"), accessor:d=>d.buyingPower }
+};
+
+let state = { metric:"eggPrice", desc:true, activeContinents:new Set(CONTINENT_ORDER) };
+
+// ---------- Legend ----------
+const legendCounts = d3.rollup(DATA, v=>v.length, d=>d.continent);
+const legend = d3.select("#legend");
+CONTINENT_ORDER.forEach(cont=>{
+  const chip = legend.append("div").attr("class","chip").attr("data-cont",cont)
+    .on("click",()=>{
+      if(state.activeContinents.has(cont)){
+        if(state.activeContinents.size>1) state.activeContinents.delete(cont);
+      } else state.activeContinents.add(cont);
+      render();
+    });
+  chip.append("span").attr("class","dot").style("background",CONTINENT_COLOR[cont]);
+  chip.append("span").text(cont);
+  chip.append("span").attr("class","n").text("("+legendCounts.get(cont)+")");
+});
+
+function updateLegendUI(){
+  legend.selectAll(".chip").classed("off", d=>{
+    const c = d3.select(event? event.currentTarget:null);
+    return false;
+  });
+  legend.selectAll(".chip").each(function(){
+    const cont = d3.select(this).attr("data-cont");
+    d3.select(this).classed("off", !state.activeContinents.has(cont));
+  });
+}
+
+// ---------- Controls ----------
+d3.selectAll("#metric-seg button").on("click", function(){
+  d3.selectAll("#metric-seg button").classed("active", false);
+  d3.select(this).classed("active", true);
+  state.metric = d3.select(this).attr("data-metric");
+  render();
+});
+
+d3.select("#dir-toggle").on("click", function(){
+  state.desc = !state.desc;
+  d3.select(this).classed("desc", state.desc);
+  d3.select("#dir-text").text(state.desc ? "Highest first" : "Lowest first");
+  render();
+});
+
+// ---------- Chart setup ----------
+const margin = {top:6, right:64, bottom:8, left:150};
+const rowH = 15.5, rowGap = 4.5;
+const svg = d3.select("#chart");
+const tooltip = d3.select("#tooltip");
+
+function width(){
+  return document.querySelector(".chart-panel").clientWidth - 44; // minus panel padding
+}
+
+function render(){
+  updateLegendUI();
+
+  const m = METRICS[state.metric];
+  d3.select("#metric-title").text(m.title);
+  d3.select("#metric-unit").text(m.unit);
+
+  let rows = DATA.filter(d=>state.activeContinents.has(d.continent));
+  rows = rows.slice().sort((a,b)=> state.desc ? m.accessor(b)-m.accessor(a) : m.accessor(a)-m.accessor(b));
+
+  const n = rows.length;
+  const innerW = Math.max(320, width()) - margin.left - margin.right;
+  const innerH = n*(rowH+rowGap);
+  const totalH = innerH + margin.top + margin.bottom;
+
+  svg.attr("width", "100%")
+     .attr("viewBox", `0 0 ${width()} ${totalH}`)
+     .attr("height", totalH);
+
+  const maxVal = d3.max(rows, m.accessor) || 1;
+  const x = d3.scaleLinear().domain([0, maxVal*1.06]).range([0, innerW]);
+
+  let g = svg.select("g.plot");
+  if(g.empty()) g = svg.append("g").attr("class","plot");
+  g.attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // grid
+  let grid = g.select("g.grid");
+  if(grid.empty()) grid = g.append("g").attr("class","grid");
+  grid.attr("transform", `translate(0,0)`)
+    .call(d3.axisTop(x).ticks(Math.min(6, Math.max(3, Math.floor(innerW/140)))).tickSize(-innerH).tickFormat(m.fmt))
+    .call(sel => sel.select(".domain").remove());
+
+  const y = i => i*(rowH+rowGap);
+
+  // rows join
+  const rowSel = g.selectAll("g.row").data(rows, d=>d.country);
+
+  rowSel.exit()
+    .transition().duration(400).style("opacity",0).remove();
+
+  const rowEnter = rowSel.enter().append("g").attr("class","row")
+    .style("opacity",0);
+
+  rowEnter.append("rect").attr("class","bar-track")
+    .attr("x",0).attr("height",rowH).attr("rx",2).attr("ry",2);
+
+  rowEnter.append("rect").attr("class","bar")
+    .attr("x",0).attr("height",rowH).attr("rx",2).attr("ry",2)
+    .attr("width",0);
+
+  rowEnter.append("text").attr("class","country-label")
+    .attr("x",-10).attr("y",rowH/2+1).attr("text-anchor","end").attr("dominant-baseline","middle")
+    .text(d=>d.country);
+
+  rowEnter.append("text").attr("class","bar-value")
+    .attr("y", rowH/2+1).attr("dominant-baseline","middle");
+
+  const rowMerge = rowEnter.merge(rowSel);
+
+  rowMerge.on("mousemove", function(event,d){
+      const cont = d.continent;
+      tooltip.classed("show", true)
+        .style("left", (event.clientX+16)+"px")
+        .style("top", (event.clientY-10)+"px")
+        .html(`
+          <div class="tt-title"><span class="tt-dot" style="background:${CONTINENT_COLOR[cont]}"></span>${d.country}</div>
+          <div class="tt-row"><span>Continent</span><b>${cont}</b></div>
+          <div class="tt-row"><span>Egg price</span><b>${d3.format("$.2f")(d.eggPrice)} / dozen</b></div>
+          <div class="tt-row"><span>Min. wage</span><b>${d3.format("$,.0f")(d.minWage)} / mo</b></div>
+          <div class="tt-row"><span>Buying power</span><b>${d3.format(",.0f")(d.buyingPower)} dozens/mo</b></div>
+          <div class="tt-row"><span>Wage basis</span><b>${d.status}</b></div>
+          <div class="tt-note">A day's min. wage covers this dozen in ~${d.days} days.</div>
+        `);
+    })
+    .on("mouseleave", ()=> tooltip.classed("show", false));
+
+  rowMerge.transition().duration(500).ease(d3.easeCubicOut)
+    .attr("transform", (d,i)=>`translate(0,${y(i)})`)
+    .style("opacity",1);
+
+  rowMerge.select(".bar-track")
+    .transition().duration(500)
+    .attr("width", innerW);
+
+  rowMerge.select(".bar")
+    .transition().duration(550).ease(d3.easeCubicOut)
+    .attr("width", d=>Math.max(2,x(m.accessor(d))))
+    .attr("fill", d=>CONTINENT_COLOR[d.continent]);
+
+  rowMerge.select(".country-label")
+    .attr("y", rowH/2+1);
+
+  rowMerge.select(".bar-value")
+    .transition().duration(500)
+    .attr("x", d=>x(m.accessor(d))+8)
+    .textTween(function(d){
+      const node = d3.select(this);
+      const prev = node.attr("data-val") ? +node.attr("data-val") : 0;
+      const next = m.accessor(d);
+      node.attr("data-val", next);
+      const i = d3.interpolateNumber(prev, next);
+      return t => m.fmt(i(t));
+    });
+}
+
+window.addEventListener("resize", ()=> render());
+render();
+</script>
+</body>
+</html>
