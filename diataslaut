@@ -1,1 +1,106 @@
+<!-- Wadah Utama Kartu Interaktif -->
+<div class="story-card-container">
+  <div class="card-header">
+    <span class="badge">Jurnalisme Data</span>
+    <h3>Realita Laut Juwana: Magnet Gaji vs Risiko Nyawa</h3>
+    <p>Klik tab di bawah untuk melihat dua sisi pengalaman siswa SMK NKPI saat PKL:</p>
+  </div>
 
+  <!-- Tombol Tab Navigasi -->
+  <div class="tab-buttons">
+    <button class="tab-btn active" onclick="openTab(event, 'gaji')">💰 Iming-iming Gaji</button>
+    <button class="tab-btn" onclick="openTab(event, 'risiko')">🌊 Tantangan & Risiko</button>
+    <button class="tab-btn" onclick="openTab(event, 'pilihan')">⚓ Pergeseran Minat</button>
+  </div>
+
+  <!-- Konten Tab 1: Gaji -->
+  <div id="gaji" class="tab-content active-content">
+    <div class="stat-box">
+      <span class="stat-number">Rp12M - 30M</span>
+      <span class="stat-label">Rata-rata pendapatan/saku yang didapat siswa selama durasi PKL (6-9 bulan).</span>
+    </div>
+    <blockquote class="quote">
+      "Gaji murni 16 juta dan ditugaskan nali balok/pelampung dapat tambahan 1,8 juta."
+      <footer>— KA (16 tahun, SMK Perikanan Nusantara Demak)</footer>
+    </blockquote>
+  </div>
+
+  <!-- Konten Tab 2: Risiko -->
+  <div id="risiko" class="tab-content">
+    <div class="stat-box warning">
+      <span class="stat-number">24 Jam</span>
+      <span class="stat-label">Pola kerja fisik arung laut, dihantam cuaca buruk dan keterbatasan sinyal.</span>
+    </div>
+    <blockquote class="quote">
+      "Mabuk laut dan kerja 24 jam. Hujan badai, angin ribut, jaring sobek, serta ombak besar."
+      <footer>— Suara gabungan siswa PKL di kapal penangkap ikan</footer>
+    </blockquote>
+  </div>
+
+  <!-- Konten Tab 3: Pilihan Karir -->
+  <div id="pilihan" class="tab-content">
+    <div class="stat-box info">
+      <span class="stat-number">29% Siswa</span>
+      <span class="stat-label">Memilih beralih ke Kapal Niaga setelah merasakan beratnya kapal penangkap ikan.</span>
+    </div>
+    <blockquote class="quote">
+      "Melihat risiko di kapal penangkap ikan lebih besar daripada di darat, sebagian memilih kapal niaga atau belum menentukan pilihan."
+      <footer>— Temuan Survei N=17</footer>
+    </blockquote>
+  </div>
+</div>
+
+<!-- Gaya Tampilan (CSS) -->
+<style>
+  .story-card-container {
+    max-width: 680px;
+    margin: 20px auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .card-header h3 { margin: 8px 0; font-size: 20px; color: #0f172a; }
+  .card-header p { font-size: 14px; color: #64748b; margin-bottom: 16px; }
+  .badge { background: #e0f2fe; color: #0369a1; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+  
+  .tab-buttons { display: flex; gap: 8px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px; }
+  .tab-btn {
+    background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 14px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s;
+  }
+  .tab-btn.active { background: #0284c7; color: white; border-color: #0284c7; }
+  
+  .tab-content { display: none; }
+  .tab-content.active-content { display: block; animation: fadeIn 0.3s ease-in-out; }
+  
+  .stat-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 4px; margin-bottom: 12px; }
+  .stat-box.warning { background: #fffbeb; border-color: #d97706; }
+  .stat-box.info { background: #f0f9ff; border-color: #0284c7; }
+  .stat-number { display: block; font-size: 22px; font-weight: bold; color: #0f172a; }
+  .stat-label { font-size: 13px; color: #475569; }
+  
+  .quote { margin: 0; padding: 12px; background: #f8fafc; border-radius: 6px; font-style: italic; font-size: 14px; color: #334155; }
+  .quote footer { margin-top: 6px; font-style: normal; font-size: 12px; font-weight: bold; color: #64748b; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+
+<!-- Skrip Interaktivitas (JS) -->
+<script>
+  function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].classList.remove("active-content");
+    }
+    tablinks = document.getElementsByClassName("tab-btn");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].classList.remove("active");
+    }
+    document.getElementById(tabName).classList.add("active-content");
+    evt.currentTarget.classList.add("active");
+  }
+</script>
