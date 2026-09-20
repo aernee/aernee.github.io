@@ -1,1 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi PKL SMK NKPI ke PPP Bajomulyo Juwana</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        #map { width: 100%; height: 100vh; }
+        .legend-card {
+            position: absolute; top: 15px; right: 15px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95); padding: 15px;
+            border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+        .legend-item { display: flex; align-items: center; margin-top: 6px; font-size: 13px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    </style>
+</head>
+<body>
 
+    <div id="map"></div>
+    <div class="legend-card">
+        <h4 style="margin:0 0 8px 0; color:#0b0c0c;">Jaringan PKL SMK NKPI</h4>
+        <div class="legend-item"><span class="dot" style="background:red;"></span> <b>PPP Bajomulyo (Pusat PKL)</b></div>
+        <div class="legend-item"><span class="dot" style="background:#1e88e5;"></span> <b>31 SMK Jurusan NKPI</b></div>
+        <div class="legend-item"><span style="width:20px; border-top:2px dashed #1e88e5; display:inline-block; margin-right:8px;"></span> Rute Koneksi PKL</div>
+        <p style="font-size:11px; color:#555; margin-top:8px; margin-bottom:0;">
+            Menampilkan sebaran 31 SMK dari 9 Provinsi di Indonesia menuju PPP Bajomulyo, Juwana.
+        </p>
+    </div>
+
+    <script>
+        var map = L.map('map').setView([-2.5, 118.0], 5);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        var hub = { name: "PPP Bajomulyo, Juwana, Pati", lat: -6.671389, lng: 111.152778 };
+
+        // Plot Hub Bajomulyo
+        var hubIcon = L.divIcon({
+            html: '<div style="background-color:red;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(0,0,0,0.5);"></div>',
+            iconSize: [22, 22], iconAnchor: [11, 11]
+        });
+        L.marker([hub.lat, hub.lng], {icon: hubIcon}).addTo(map)
+            .bindPopup("<b>" + hub.name + "</b><br>Centra Perikanan Laut & Rujukan Utama PKL NKPI Se-Indonesia");
+
+        // Data 31 SMK
+        var schools = [
+            {nama: "SMK Negeri 2 Rembang", lat: -6.7023, lng: 111.3789, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 1 Jepara", lat: -6.5861, lng: 110.6728, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 4 Pati", lat: -6.7410, lng: 111.0180, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 1 Giritontro", lat: -8.0772, lng: 110.8711, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 2 Cilacap", lat: -7.7312, lng: 109.0068, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 1 Puring", lat: -7.7812, lng: 109.5218, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 4 Kendal", lat: -6.9388, lng: 110.2291, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 4 Purworejo", lat: -7.8301, lng: 109.9822, prov: "Jawa Tengah"},
+            {nama: "SMK Swasta Nusantara Batang", lat: -6.8920, lng: 109.7340, prov: "Jawa Tengah"},
+            {nama: "SMK Wira Bahari Pekalongan", lat: -6.8612, lng: 109.6201, prov: "Jawa Tengah"},
+            {nama: "SMKS SUPM Yamipura Suradadi", lat: -6.8654, lng: 109.2511, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 1 Bulakamba", lat: -6.8789, lng: 108.9322, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 2 Songgom", lat: -7.0211, lng: 108.9954, prov: "Jawa Tengah"},
+            {nama: "SMK Perikanan Irma Pekalongan", lat: -6.8950, lng: 109.6631, prov: "Jawa Tengah"},
+            {nama: "SUPM Negeri Tegal", lat: -6.8622, lng: 109.1412, prov: "Jawa Tengah"},
+            {nama: "SMK Negeri 3 Tegal", lat: -6.8710, lng: 109.1280, prov: "Jawa Tengah"},
+            {nama: "SMK Swasta Perikanan Nusantara Demak", lat: -6.8911, lng: 110.6401, prov: "Jawa Tengah"},
+            {nama: "SMK Perikanan dan Kelautan Puger", lat: -8.3611, lng: 113.4732, prov: "Jawa Timur"},
+            {nama: "SMKN 1 Temon", lat: -7.8961, lng: 110.0654, prov: "DI Yogyakarta"},
+            {nama: "SMKN 1 Tanjungsari", lat: -8.1254, lng: 110.5512, prov: "DI Yogyakarta"},
+            {nama: "SMKN 1 Mundu Cirebon", lat: -6.7421, lng: 108.5812, prov: "Jawa Barat"},
+            {nama: "SMKN 2 Ketapang", lat: -1.8211, lng: 109.9812, prov: "Kalimantan Barat"},
+            {nama: "SMKN 2 Painan", lat: -1.3321, lng: 100.5612, prov: "Sumatera Barat"},
+            {nama: "SMK Pelayaran Muhammadiyah Tuban", lat: -6.8971, lng: 112.0621, prov: "Jawa Timur"},
+            {nama: "SMKN 1 Cidaun", lat: -7.4851, lng: 107.3521, prov: "Jawa Barat"},
+            {nama: "SMKN 1 Banyuputih", lat: -7.7421, lng: 114.3211, prov: "Jawa Timur"},
+            {nama: "SMK Kelautan dan Perikanan Bengkulu", lat: -3.7651, lng: 102.2711, prov: "Bengkulu"},
+            {nama: "SMK Negeri 4 Banda Aceh", lat: 5.5621, lng: 95.3211, prov: "Aceh"},
+            {nama: "SMKN 2 Subang", lat: -6.5711, lng: 107.7521, prov: "Jawa Barat"},
+            {nama: "SMKN 1 Bendahara", lat: 4.4121, lng: 98.1121, prov: "Aceh"},
+            {nama: "SMKN 1 Keruak", lat: -8.7611, lng: 116.5121, prov: "Nusa Tenggara Barat"}
+        ];
+
+        var schoolIcon = L.divIcon({
+            html: '<div style="background-color:#1e88e5;width:10px;height:10px;border-radius:50%;border:2px solid white;"></div>',
+            iconSize: [14, 14], iconAnchor: [7, 7]
+        });
+
+        schools.forEach(function(s) {
+            // Garis penghubung ke PPP Bajomulyo
+            L.polyline([[s.lat, s.lng], [hub.lat, hub.lng]], {
+                color: '#1e88e5', weight: 1.5, opacity: 0.4, dashArray: '4, 4'
+            }).addTo(map);
+
+            // Marker Sekolah
+            L.marker([s.lat, s.lng], {icon: schoolIcon}).addTo(map)
+                .bindPopup("<b>" + s.nama + "</b><br>Provinsi: " + s.prov + "<br>Tujuan PKL: " + hub.name);
+        });
+    </script>
+</body>
+</html>
