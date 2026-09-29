@@ -1,104 +1,205 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualisasi PKL SMK NKPI ke PPP Bajomulyo Juwana</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; }
-        #map { width: 100%; height: 100vh; }
-        .legend-card {
-            position: absolute; top: 15px; right: 15px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); padding: 15px;
-            border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            max-width: 300px;
-        }
-        .legend-item { display: flex; align-items: center; margin-top: 6px; font-size: 13px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Jalur Kerja Sama Sekolah–Dunia Industri</title>
+<style>
+  :root{
+    --navy:#103b66; --blue:#2477c5; --teal:#159a8a; --orange:#f28a28; --purple:#7357c7;\n    --ink:#17324d; --muted:#637589; --line:#dce5ec; --bg:#f4f7fb; --white:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:1180px;margin:auto;padding:28px 18px 36px}
+  header{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin-bottom:20px}
+  h1{font-size:clamp(25px,3.5vw,42px);line-height:1.08;margin:0 0 8px;letter-spacing:-.03em;color:var(--navy);position:relative;padding-left:14px}\n  h1:before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:5px;border-radius:8px;background:linear-gradient(180deg,var(--orange),var(--teal),var(--blue))}
+  .dek{margin:0;color:var(--muted);font-size:15px;max-width:720px}
+  .source{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+  .controls{background:linear-gradient(135deg,#ffffff 0%,#eef7ff 100%);border:1px solid #d7e5f1;border-radius:16px;padding:12px;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;box-shadow:0 8px 24px rgba(16,59,102,.06)}
+  button{border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 14px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer}
+  button:hover,button:focus-visible{border-color:var(--blue);outline:none}
+  button.active{background:linear-gradient(135deg,var(--navy),var(--blue));border-color:var(--navy);color:#fff;box-shadow:0 5px 14px rgba(16,59,102,.16)}
+  .summary{display:none}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px}
+  .stat b{display:block;font-size:23px;color:var(--navy);margin-bottom:4px}
+  .stat span{font-size:12px;color:var(--muted)}
+  .layout{display:grid;grid-template-columns:1.35fr .85fr;gap:16px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 28px rgba(16,59,102,.055)}
+  .panel h2{font-size:17px;margin:0 0 14px;color:var(--navy)}
+  .routes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .route{border:1px solid var(--line);border-radius:15px;padding:15px;cursor:pointer;background:linear-gradient(145deg,#fff,#f8fbfe);transition:.18s;position:relative;overflow:hidden}
+  .route:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(15,59,99,.08)}
+  .route.active{border-color:var(--blue);box-shadow:0 0 0 2px rgba(36,119,197,.14),0 10px 24px rgba(36,119,197,.10);background:linear-gradient(145deg,#f3f9ff,#fff)}\n  .route:nth-child(1) .num{color:var(--orange)}\n  .route:nth-child(2) .num{color:var(--teal)}\n  .route:nth-child(3) .num{color:var(--blue)}
+  .route .num{font-size:12px;font-weight:800;color:var(--blue);margin-bottom:7px}
+  .route h3{font-size:15px;line-height:1.25;margin:0 0 7px}
+  .route p{font-size:12px;line-height:1.45;color:var(--muted);margin:0}
+  .detail{margin-top:14px;padding:17px;border-radius:15px;background:linear-gradient(135deg,#f7fbff,#f3fbf9);border:1px solid #d8e7ee;min-height:205px}
+  .detail-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .badge{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#e9f2ff;color:var(--blue);border:1px solid #cfe2f7}
+  .detail h3{margin:0;font-size:19px}
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 15px}
+  .node{padding:9px 11px;border:1px solid #d6e2eb;border-radius:10px;background:#fff;font-size:12px;font-weight:700;box-shadow:0 2px 7px rgba(16,59,102,.04)}
+  .arrow{color:var(--muted);font-weight:900}
+  .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+  .fact{padding:10px 11px;border-radius:10px;background:rgba(255,255,255,.82);border:1px solid #dbe7ed}
+  .fact small{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}
+  .fact strong{font-size:13px;line-height:1.35}
+  .compare{width:100%;border-collapse:collapse;font-size:12px}
+  .compare th,.compare td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+  .compare th{font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:.05em;background:var(--navy)}
+  .compare td:first-child{font-weight:800;color:var(--navy);width:27%}
+  .yes{font-weight:800}.no{color:var(--muted)}
+  .legend{font-size:11px;color:var(--muted);margin-top:12px}
+  .footer{margin-top:15px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    .summary{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:620px){
+    .wrap{padding:20px 12px 28px}
+    header{display:block}.source{text-align:left;margin-top:8px}
+    .routes{grid-template-columns:1fr}
+    .facts{grid-template-columns:1fr}
+    .compare{min-width:720px}
+    .table-scroll{overflow-x:auto}
+  }
+</style>
 </head>
 <body>
+<main class="wrap">
+  <header>
+    <div>
+      <h1>Jalur Kerja Sama Sekolah–Dunia Industri</h1>
+      <p class="dek">Tiga pola penempatan PKL siswa Nautika Kapal Penangkap Ikan di PPP Juwana.</p>
+    </div>
+    <div class="source">Sumber: diolah dari hasil wawancara narasumber</div>
+  </header>
 
-    <div id="map"></div>
-    <div class="legend-card">
-        <h4 style="margin:0 0 8px 0; color:#0b0c0c;">Jaringan PKL SMK NKPI</h4>
-        <div class="legend-item"><span class="dot" style="background:red;"></span> <b>PPP Bajomulyo (Pusat PKL)</b></div>
-        <div class="legend-item"><span class="dot" style="background:#1e88e5;"></span> <b>31 SMK Jurusan NKPI</b></div>
-        <div class="legend-item"><span style="width:20px; border-top:2px dashed #1e88e5; display:inline-block; margin-right:8px;"></span> Rute Koneksi PKL</div>
-        <p style="font-size:11px; color:#555; margin-top:8px; margin-bottom:0;">
-            Menampilkan sebaran 31 SMK dari 9 Provinsi di Indonesia menuju PPP Bajomulyo, Juwana.
-        </p>
+  <nav class="controls" aria-label="Pilih jalur">
+    <button class="route-btn active" data-route="all">Semua jalur</button>
+    <button class="route-btn" data-route="1">1 · Perantara</button>
+    <button class="route-btn" data-route="2">2 · Sekolah hub</button>
+    <button class="route-btn" data-route="3">3 · Langsung ke PT</button>
+  </nav>
+
+  <section class="layout">
+    <div class="panel">
+      <h2>Pilih jalur untuk melihat alurnya</h2>
+      <div class="routes">
+        <article class="route active" data-route-card="1">
+          <div class="num">01 · PERANTARA</div>
+          <h3>LKP / CV / PT sebagai perantara</h3>
+          <p>Perantara menghubungkan sekolah, siswa, dan pemilik kapal.</p>
+        </article>
+        <article class="route" data-route-card="2">
+          <div class="num">02 · SEKOLAH HUB</div>
+          <h3>Sekolah hub</h3>
+          <p>Satu SMK menjadi penghubung dengan industri bagi sekolah mitra.</p>
+        </article>
+        <article class="route" data-route-card="3">
+          <div class="num">03 · LANGSUNG</div>
+          <h3>Langsung sekolah–PT/pemilik kapal</h3>
+          <p>Sekolah berhubungan langsung dengan pihak industri.</p>
+        </article>
+      </div>
+
+      <div class="detail" id="detail" aria-live="polite"></div>
     </div>
 
-    <script>
-        var map = L.map('map').setView([-2.5, 118.0], 5);
+    <div class="panel">
+      <h2>Perbandingan inti</h2>
+      <div class="table-scroll">
+        <table class="compare">
+          <thead>
+            <tr><th>Aspek</th><th>Jalur 1</th><th>Jalur 2</th><th>Jalur 3</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Penghubung</td><td>LKP/CV/PT</td><td>SMK hub</td><td>Tidak ada perantara</td></tr>
+            <tr><td>Akses industri</td><td>Tidak langsung</td><td>Melalui SMK hub</td><td>Langsung</td></tr>
+            <tr><td>Biaya/fee</td><td>Ada di dua sisi</td><td>Tidak disebutkan</td><td>Lebih ringan bagi siswa</td></tr>
+            <tr><td>Kesepakatan formal</td><td>Tidak disebutkan</td><td>Kerja sama jaringan</td><td>MOU PKL</td></tr>
+            <tr><td>Penempatan siswa</td><td>Ditentukan perantara</td><td>Dikoordinasikan sekolah hub</td><td>Dikoordinasikan sekolah & industri</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="legend">Klik kartu atau filter di atas untuk membaca satu jalur secara fokus.</p>
+    </div>
+  </section>
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+  <div class="footer">
+    <span>Data bersifat kualitatif.</span>
+    <span>Visualisasi untuk kebutuhan publikasi jurnalistik.</span>
+  </div>
+</main>
 
-        var hub = { name: "PPP Bajomulyo, Juwana, Pati", lat: -6.671389, lng: 111.152778 };
+<script>
+(() => {
+  const data = {
+    "1": {
+      title:"LKP / CV / PT sebagai perantara",
+      tag:"Perantara",
+      flow:["SMK","LKP / CV / PT","Pemilik kapal","Siswa PKL"],
+      facts:[
+        ["Peran penghubung","LKP/CV/PT"],
+        ["Penempatan","Ditentukan perantara"],
+        ["Biaya/fee","Dari siswa dan pemilik kapal"],
+        ["Hubungan sekolah–industri","Tidak langsung"]
+      ]
+    },
+    "2": {
+      title:"Sekolah hub",
+      tag:"Jaringan sekolah",
+      flow:["SMK mitra","SMK hub","Pemilik kapal / industri","Siswa PKL"],
+      facts:[
+        ["Peran penghubung","SMK hub"],
+        ["Akses industri","Langsung melalui sekolah hub"],
+        ["Penempatan","Dikoordinasikan sekolah"],
+        ["Tujuan utama","Mengurangi peran perantara"]
+      ]
+    },
+    "3": {
+      title:"Langsung sekolah–PT/pemilik kapal",
+      tag:"Hubungan langsung",
+      flow:["SMK","PT / pemilik kapal","Siswa PKL"],
+      facts:[
+        ["Peran penghubung","Tidak ada perantara"],
+        ["Kesepakatan","MOU PKL"],
+        ["Penempatan","Dikoordinasikan sekolah & industri"],
+        ["Biaya PKL","Lebih ringan bagi siswa"]
+      ]
+    }
+  };
 
-        // Plot Hub Bajomulyo
-        var hubIcon = L.divIcon({
-            html: '<div style="background-color:red;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 8px rgba(0,0,0,0.5);"></div>',
-            iconSize: [22, 22], iconAnchor: [11, 11]
-        });
-        L.marker([hub.lat, hub.lng], {icon: hubIcon}).addTo(map)
-            .bindPopup("<b>" + hub.name + "</b><br>Centra Perikanan Laut & Rujukan Utama PKL NKPI Se-Indonesia");
+  const detail = document.getElementById("detail");
+  const cards = [...document.querySelectorAll(".route")];
+  const buttons = [...document.querySelectorAll(".route-btn")];
 
-        // Data 31 SMK
-        var schools = [
-            {nama: "SMK Negeri 2 Rembang", lat: -6.7023, lng: 111.3789, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 1 Jepara", lat: -6.5861, lng: 110.6728, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 4 Pati", lat: -6.7410, lng: 111.0180, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 1 Giritontro", lat: -8.0772, lng: 110.8711, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 2 Cilacap", lat: -7.7312, lng: 109.0068, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 1 Puring", lat: -7.7812, lng: 109.5218, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 4 Kendal", lat: -6.9388, lng: 110.2291, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 4 Purworejo", lat: -7.8301, lng: 109.9822, prov: "Jawa Tengah"},
-            {nama: "SMK Swasta Nusantara Batang", lat: -6.8920, lng: 109.7340, prov: "Jawa Tengah"},
-            {nama: "SMK Wira Bahari Pekalongan", lat: -6.8612, lng: 109.6201, prov: "Jawa Tengah"},
-            {nama: "SMKS SUPM Yamipura Suradadi", lat: -6.8654, lng: 109.2511, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 1 Bulakamba", lat: -6.8789, lng: 108.9322, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 2 Songgom", lat: -7.0211, lng: 108.9954, prov: "Jawa Tengah"},
-            {nama: "SMK Perikanan Irma Pekalongan", lat: -6.8950, lng: 109.6631, prov: "Jawa Tengah"},
-            {nama: "SUPM Negeri Tegal", lat: -6.8622, lng: 109.1412, prov: "Jawa Tengah"},
-            {nama: "SMK Negeri 3 Tegal", lat: -6.8710, lng: 109.1280, prov: "Jawa Tengah"},
-            {nama: "SMK Swasta Perikanan Nusantara Demak", lat: -6.8911, lng: 110.6401, prov: "Jawa Tengah"},
-            {nama: "SMK Perikanan dan Kelautan Puger", lat: -8.3611, lng: 113.4732, prov: "Jawa Timur"},
-            {nama: "SMKN 1 Temon", lat: -7.8961, lng: 110.0654, prov: "DI Yogyakarta"},
-            {nama: "SMKN 1 Tanjungsari", lat: -8.1254, lng: 110.5512, prov: "DI Yogyakarta"},
-            {nama: "SMKN 1 Mundu Cirebon", lat: -6.7421, lng: 108.5812, prov: "Jawa Barat"},
-            {nama: "SMKN 2 Ketapang", lat: -1.8211, lng: 109.9812, prov: "Kalimantan Barat"},
-            {nama: "SMKN 2 Painan", lat: -1.3321, lng: 100.5612, prov: "Sumatera Barat"},
-            {nama: "SMK Pelayaran Muhammadiyah Tuban", lat: -6.8971, lng: 112.0621, prov: "Jawa Timur"},
-            {nama: "SMKN 1 Cidaun", lat: -7.4851, lng: 107.3521, prov: "Jawa Barat"},
-            {nama: "SMKN 1 Banyuputih", lat: -7.7421, lng: 114.3211, prov: "Jawa Timur"},
-            {nama: "SMK Kelautan dan Perikanan Bengkulu", lat: -3.7651, lng: 102.2711, prov: "Bengkulu"},
-            {nama: "SMK Negeri 4 Banda Aceh", lat: 5.5621, lng: 95.3211, prov: "Aceh"},
-            {nama: "SMKN 2 Subang", lat: -6.5711, lng: 107.7521, prov: "Jawa Barat"},
-            {nama: "SMKN 1 Bendahara", lat: 4.4121, lng: 98.1121, prov: "Aceh"},
-            {nama: "SMKN 1 Keruak", lat: -8.7611, lng: 116.5121, prov: "Nusa Tenggara Barat"}
-        ];
+  function render(id){
+    const d = data[id];
+    detail.innerHTML = `
+      <div class="detail-top">
+        <h3>${d.title}</h3>
+        <span class="badge">${d.tag}</span>
+      </div>
+      <div class="flow">
+        ${d.flow.map((x,i)=>`<span class="node">${x}</span>${i<d.flow.length-1?'<span class="arrow">→</span>':''}`).join("")}
+      </div>
+      <div class="facts">
+        ${d.facts.map(f=>`<div class="fact"><small>${f[0]}</small><strong>${f[1]}</strong></div>`).join("")}
+      </div>`;
+  }
 
-        var schoolIcon = L.divIcon({
-            html: '<div style="background-color:#1e88e5;width:10px;height:10px;border-radius:50%;border:2px solid white;"></div>',
-            iconSize: [14, 14], iconAnchor: [7, 7]
-        });
+  function selectRoute(id){
+    cards.forEach(c=>c.classList.toggle("active",c.dataset.routeCard===id));
+    buttons.forEach(b=>b.classList.toggle("active",b.dataset.route===id));
+    if(id==="all") { cards.forEach(c=>c.classList.remove("active")); cards[0].classList.add("active"); render("1"); } else render(id);
+  }
 
-        schools.forEach(function(s) {
-            // Garis penghubung ke PPP Bajomulyo
-            L.polyline([[s.lat, s.lng], [hub.lat, hub.lng]], {
-                color: '#1e88e5', weight: 1.5, opacity: 0.4, dashArray: '4, 4'
-            }).addTo(map);
+  cards.forEach(c=>c.addEventListener("click",()=>selectRoute(c.dataset.routeCard)));
+  buttons.forEach(b=>b.addEventListener("click",()=>selectRoute(b.dataset.route)));
 
-            // Marker Sekolah
-            L.marker([s.lat, s.lng], {icon: schoolIcon}).addTo(map)
-                .bindPopup("<b>" + s.nama + "</b><br>Provinsi: " + s.prov + "<br>Tujuan PKL: " + hub.name);
-        });
-    </script>
+  render("1");
+})();
+</script>
 </body>
 </html>
